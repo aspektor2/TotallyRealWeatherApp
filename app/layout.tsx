@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Enterprise Weather Company™ — Weather intelligence at scale",
+  title: "Totally Real Weather App™ — Weather intelligence at scale",
   description:
-    "Enterprise-grade weather solutions for modern organizations. Trusted by over 3 Fortune 500 companies.",
+    "Enterprise-grade weather solutions for modern organizations.",
   openGraph: {
-    title: "Enterprise Weather Company™",
+    title: "Totally Real Weather App™",
     description:
-      "Enterprise-grade weather solutions for modern organizations. Future weather is expensive to manufacture.",
+      "Enterprise-grade weather data",
     type: "website",
   },
 };
