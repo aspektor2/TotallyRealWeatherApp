@@ -1,6 +1,6 @@
-# Enterprise Weather Company™
+# Totally Real Weather App™
 
-Enterprise-grade weather solutions for modern organizations. Trusted by over 3 Fortune 500 companies. Weather data may be weather.
+Real weather. Really expensive. Trusted by over 3 Fortune 500 companies. Weather data may be weather.
 
 A satirical weather site: real weather data, completely serious premium SaaS design, and almost everything useful locked behind absurd paywalls.
 

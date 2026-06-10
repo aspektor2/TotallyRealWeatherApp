@@ -1,33 +1,68 @@
 "use client";
 
-import { Lock } from "lucide-react";
+import {
+  Thermometer,
+  Droplets,
+  Wind,
+  Sun,
+  Eye,
+  Sunrise,
+  Sunset,
+  CloudRain,
+  Lock,
+  type LucideIcon,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
+
+type TileColor = "mint" | "blue" | "amber" | "pink" | "purple" | "coral";
+
+const TILE: Record<TileColor, { bg: string; text: string }> = {
+  mint: { bg: "bg-tile-mint", text: "text-tile-mintText" },
+  blue: { bg: "bg-tile-blue", text: "text-tile-blueText" },
+  amber: { bg: "bg-tile-amber", text: "text-tile-amberText" },
+  pink: { bg: "bg-tile-pink", text: "text-tile-pinkText" },
+  purple: { bg: "bg-tile-purple", text: "text-tile-purpleText" },
+  coral: { bg: "bg-tile-coral", text: "text-tile-coralText" },
+};
+
+const ICONS: Record<string, LucideIcon> = {
+  "Feels Like": Thermometer,
+  Humidity: Droplets,
+  "Wind Speed": Wind,
+  "UV Index": Sun,
+  Visibility: Eye,
+  Sunrise: Sunrise,
+  Sunset: Sunset,
+  "Rain Probability": CloudRain,
+};
 
 export function Metric({
   label,
   value,
   unit,
+  color,
   locked,
-  lockedHint,
   onUnlock,
 }: {
   label: string;
   value: string | number;
   unit?: string;
+  color: TileColor;
   locked: boolean;
-  lockedHint?: string;
   onUnlock?: () => void;
 }) {
+  const t = TILE[color];
+  const Icon = ICONS[label] ?? Sun;
+
   if (!locked) {
     return (
-      <div className="rounded-xl border border-line bg-white/70 p-4">
-        <div className="text-[11px] font-medium uppercase tracking-[0.12em] text-mist">
-          {label}
-        </div>
-        <div className="tabular mt-1.5 font-mono text-2xl font-medium text-ink">
+      <div className={cn("rounded-2xl p-4 text-center", t.bg)}>
+        <Icon className={cn("mx-auto h-5 w-5", t.text)} aria-hidden="true" />
+        <div className={cn("mt-1.5 text-xs font-bold", t.text)}>{label}</div>
+        <div className="tabular mt-0.5 text-xl font-extrabold text-ink">
           {value}
           {unit && (
-            <span className="ml-1 text-sm font-normal text-slateink">
+            <span className="ml-0.5 text-sm font-bold text-slateink">
               {unit}
             </span>
           )}
@@ -40,31 +75,17 @@ export function Metric({
     <button
       type="button"
       onClick={onUnlock}
-      title={lockedHint}
       className={cn(
-        "group relative w-full rounded-xl border border-line bg-white/70 p-4 text-left transition-all",
-        "hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-lift focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+        "group rounded-2xl p-4 text-center transition-transform hover:-translate-y-0.5 hover:animate-wiggle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky",
+        t.bg
       )}
     >
-      <div className="flex items-center justify-between">
-        <div className="text-[11px] font-medium uppercase tracking-[0.12em] text-mist">
-          {label}
-        </div>
-        <Lock className="h-3.5 w-3.5 text-mist transition-colors group-hover:text-brand" />
+      <Lock className={cn("mx-auto h-5 w-5", t.text)} aria-hidden="true" />
+      <div className={cn("mt-1.5 text-xs font-bold", t.text)}>{label}</div>
+      <div className="mt-0.5 text-xl font-extrabold text-ink" aria-hidden="true">
+        ???
       </div>
-      <div
-        className="redacted tabular mt-1.5 font-mono text-2xl font-medium text-ink"
-        aria-hidden="true"
-      >
-        {value}
-        {unit && (
-          <span className="ml-1 text-sm font-normal text-slateink">{unit}</span>
-        )}
-      </div>
-      <span className="sr-only">Locked. Requires Weather Premium.</span>
-      <div className="mt-1 text-[11px] font-medium text-brand opacity-0 transition-opacity group-hover:opacity-100">
-        Unlock with Weather Premium™
-      </div>
+      <span className="sr-only">Locked. Tap to unlock with Weather Premium.</span>
     </button>
   );
 }

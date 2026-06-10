@@ -7,7 +7,6 @@ import {
   Database,
   Briefcase,
   Loader2,
-  Lock,
   CheckCircle2,
   ChevronLeft,
   BadgePercent,
@@ -20,6 +19,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Drizzle, SpeechBubble } from "@/components/drizzle";
+import { Confetti } from "@/components/confetti";
 import { DISCOUNT_CODE, TIERS, type Tier } from "@/lib/tiers";
 import { cn } from "@/lib/utils";
 
@@ -40,17 +41,17 @@ export function PaywallModal({
 }) {
   const t = TIERS[tier];
   const [view, setView] = useState<View>("options");
-  const [successNote, setSuccessNote] = useState<string[] | null>(null);
+  const [soldTo, setSoldTo] = useState<string[] | null>(null);
 
   useEffect(() => {
     if (open) {
       setView("options");
-      setSuccessNote(null);
+      setSoldTo(null);
     }
   }, [open, tier]);
 
   function succeed(note?: string[]) {
-    setSuccessNote(note ?? null);
+    setSoldTo(note ?? null);
     setView("success");
     onUnlock(tier);
   }
@@ -60,49 +61,59 @@ export function PaywallModal({
       <DialogContent>
         {view === "options" && (
           <>
-            <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl bg-brand-soft">
-              <Lock className="h-5 w-5 text-brand" />
+            <div className="mb-4 flex items-center gap-3">
+              <Drizzle mood="guard" className="h-20 w-24 shrink-0" />
+              <SpeechBubble>
+                Whoa there, buddy! This data is protected under the Totally
+                Real Weather Access Program. {t.name} is {t.priceLabel}. I
+                don&apos;t make the rules. (I make the rules.)
+              </SpeechBubble>
             </div>
             <DialogTitle>Unlock Premium Weather™</DialogTitle>
             <DialogDescription>
-              This information is currently protected under the Enterprise
-              Weather Access Program. You are unlocking{" "}
-              <span className="font-medium text-ink">{t.name}</span> (
-              {t.priceLabel}).
+              Pick how you&apos;d like to pay. Drizzle accepts almost
+              everything.
             </DialogDescription>
 
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
               <OptionCard
                 icon={CreditCard}
+                color="bg-tile-mint text-tile-mintText"
                 title="Purchase Access"
                 body={`One-time payment of ${t.priceLabel}. Valid for the current session only.`}
                 cta="Purchase Now"
+                variant="primary"
                 onClick={() => setView("purchase")}
-                featured
               />
               <OptionCard
                 icon={PlayCircle}
+                color="bg-tile-blue text-tile-blueText"
                 title="Watch An Advertisement"
                 body="View a short message from one of our atmospheric partners."
                 cta="Continue"
+                variant="outline"
                 onClick={() => setView("ad")}
               />
               <OptionCard
                 icon={Database}
+                color="bg-tile-purple text-tile-purpleText"
                 title="Provide Personal Information"
-                body="Exchange your data for enhanced meteorological visibility."
+                body="Trade your secrets for sweet, sweet humidity."
                 cta="Get Started"
+                variant="outline"
                 onClick={() => setView("sell")}
               />
               <OptionCard
                 icon={Briefcase}
+                color="bg-tile-amber text-tile-amberText"
                 title="Contact Sales"
-                body="Discuss enterprise weather procurement with our team."
+                body="Discuss weather procurement with our team. (The team is Drizzle.)"
                 cta="Schedule Demo"
+                variant="outline"
                 onClick={() => setView("sales")}
               />
             </div>
-            <p className="mt-5 text-center text-xs text-mist">
+            <p className="mt-5 text-center text-xs font-bold text-mist">
               Weather accuracy not guaranteed. All sales final.
             </p>
           </>
@@ -136,40 +147,41 @@ export function PaywallModal({
         {view === "sales" && <SalesFlow onBack={() => setView("options")} />}
 
         {view === "success" && (
-          <div className="py-4 text-center">
-            <CheckCircle2 className="mx-auto h-12 w-12 text-brand" />
-            <DialogTitle className="mt-4">
-              {successNote ? "Thank you." : "Thank you for supporting premium weather."}
+          <div className="relative py-4 text-center">
+            <Confetti />
+            <Drizzle mood="party" className="mx-auto h-24 w-28" />
+            <DialogTitle className="mt-3">
+              {soldTo ? "Thank you." : "Woo-hoo! Premium weather!"}
             </DialogTitle>
-            {successNote ? (
+            {soldTo ? (
               <div className="mx-auto mt-4 max-w-sm text-left">
-                <p className="text-sm text-slateink">
+                <p className="text-sm font-bold text-slateink">
                   Your information has been successfully sold to:
                 </p>
                 <ul className="mt-3 space-y-2">
-                  {successNote.map((org) => (
+                  {soldTo.map((org) => (
                     <li
                       key={org}
-                      className="flex items-center gap-2 text-sm font-medium text-ink"
+                      className="flex items-center gap-2 text-sm font-extrabold text-ink"
                     >
-                      <CheckCircle2 className="h-4 w-4 text-brand" /> {org}
+                      <CheckCircle2 className="h-4 w-4 text-leaf" /> {org}
                     </li>
                   ))}
                 </ul>
-                <p className="mt-4 text-sm italic text-slateink">
+                <p className="mt-4 text-sm font-bold italic text-slateink">
                   Your sacrifice has been accepted.
                 </p>
               </div>
             ) : (
               <DialogDescription className="mx-auto max-w-sm">
                 {t.name} is now active. Purchases are valid for the current
-                session only.
+                session only. Drizzle is so proud of you.
               </DialogDescription>
             )}
-            <Button className="mt-6" onClick={() => onOpenChange(false)}>
+            <Button variant="sky" className="mt-6" onClick={() => onOpenChange(false)}>
               View My Weather
             </Button>
-            <p className="mt-4 text-xs text-mist">
+            <p className="mt-4 text-xs font-bold text-mist">
               Weather accuracy not guaranteed. All sales final.
             </p>
           </div>
@@ -181,39 +193,36 @@ export function PaywallModal({
 
 function OptionCard({
   icon: Icon,
+  color,
   title,
   body,
   cta,
+  variant,
   onClick,
-  featured,
 }: {
   icon: typeof CreditCard;
+  color: string;
   title: string;
   body: string;
   cta: string;
+  variant: "primary" | "outline";
   onClick: () => void;
-  featured?: boolean;
 }) {
   return (
-    <div
-      className={cn(
-        "flex flex-col rounded-xl border p-4 transition-all",
-        featured
-          ? "border-brand/40 bg-brand-soft/50"
-          : "border-line bg-white hover:border-mist"
-      )}
-    >
-      <Icon className={cn("h-5 w-5", featured ? "text-brand" : "text-slateink")} />
-      <div className="mt-3 text-sm font-semibold text-ink">{title}</div>
-      <p className="mt-1 flex-1 text-[13px] leading-relaxed text-slateink">
+    <div className="flex flex-col rounded-2xl border-2 border-line bg-white p-4 transition-transform hover:-translate-y-0.5">
+      <div
+        className={cn(
+          "flex h-10 w-10 items-center justify-center rounded-xl",
+          color
+        )}
+      >
+        <Icon className="h-5 w-5" aria-hidden="true" />
+      </div>
+      <div className="mt-3 text-sm font-extrabold text-ink">{title}</div>
+      <p className="mt-1 flex-1 text-[13px] font-semibold leading-relaxed text-slateink">
         {body}
       </p>
-      <Button
-        size="sm"
-        variant={featured ? "primary" : "outline"}
-        className="mt-3 w-full"
-        onClick={onClick}
-      >
+      <Button size="sm" variant={variant} className="mt-3 w-full" onClick={onClick}>
         {cta}
       </Button>
     </div>
@@ -225,7 +234,7 @@ function BackLink({ onBack }: { onBack: () => void }) {
     <button
       type="button"
       onClick={onBack}
-      className="mb-4 inline-flex items-center gap-1 text-sm font-medium text-slateink transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-md"
+      className="mb-4 inline-flex items-center gap-1 rounded-md text-sm font-extrabold text-slateink transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky"
     >
       <ChevronLeft className="h-4 w-4" /> All options
     </button>
@@ -255,14 +264,13 @@ function PurchaseFlow({
       setApplied(true);
       setCodeError(null);
     } else {
-      setCodeError("That code is not recognized by our revenue systems.");
+      setCodeError("Drizzle doesn't recognize that code. Drizzle is judging you.");
     }
   }
 
   async function completePurchase() {
     setError(null);
     if (applied) {
-      // Total is $0.00 — unlock without touching Stripe.
       onFreeUnlock();
       return;
     }
@@ -295,22 +303,22 @@ function PurchaseFlow({
         browser session.
       </DialogDescription>
 
-      <div className="mt-6 rounded-xl border border-line bg-cloud p-5">
-        <div className="flex items-center justify-between text-sm">
+      <div className="mt-6 rounded-2xl border-2 border-line bg-cloud p-5">
+        <div className="flex items-center justify-between text-sm font-bold">
           <span className="text-slateink">Subtotal</span>
-          <span className="tabular font-mono text-ink">{t.priceLabel}</span>
+          <span className="tabular text-ink">{t.priceLabel}</span>
         </div>
         {applied && (
-          <div className="mt-2 flex items-center justify-between text-sm">
-            <span className="inline-flex items-center gap-1.5 text-brand">
+          <div className="mt-2 flex items-center justify-between text-sm font-bold">
+            <span className="inline-flex items-center gap-1.5 text-leaf-edge">
               <BadgePercent className="h-4 w-4" /> Discount ({DISCOUNT_CODE})
             </span>
-            <span className="tabular font-mono text-brand">-{t.priceLabel}</span>
+            <span className="tabular text-leaf-edge">-{t.priceLabel}</span>
           </div>
         )}
-        <div className="mt-3 flex items-center justify-between border-t border-line pt-3">
-          <span className="text-sm font-semibold text-ink">Total</span>
-          <span className="tabular font-mono text-lg font-semibold text-ink">
+        <div className="mt-3 flex items-center justify-between border-t-2 border-line pt-3">
+          <span className="text-sm font-extrabold text-ink">Total</span>
+          <span className="tabular text-lg font-extrabold text-ink">
             {applied ? "$0.00" : t.priceLabel}
           </span>
         </div>
@@ -320,7 +328,7 @@ function PurchaseFlow({
         <div className="mt-4">
           <label
             htmlFor="discount"
-            className="text-xs font-medium uppercase tracking-wide text-mist"
+            className="text-xs font-extrabold uppercase tracking-wide text-mist"
           >
             Discount Code
           </label>
@@ -331,32 +339,29 @@ function PurchaseFlow({
               onChange={(e) => setCode(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && applyCode()}
               placeholder="Enter code"
-              className="h-11 uppercase"
+              className="h-12 font-bold uppercase"
             />
             <Button variant="outline" onClick={applyCode}>
               Apply
             </Button>
           </div>
-          {codeError && <p className="mt-2 text-sm text-red-600">{codeError}</p>}
+          {codeError && (
+            <p className="mt-2 text-sm font-bold text-berry-edge">{codeError}</p>
+          )}
         </div>
       )}
 
       {error && (
-        <p className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">
+        <p className="mt-4 rounded-xl bg-tile-pink p-3 text-sm font-bold text-tile-pinkText">
           {error}
         </p>
       )}
 
-      <Button
-        size="lg"
-        className="mt-6 w-full"
-        onClick={completePurchase}
-        disabled={busy}
-      >
+      <Button size="lg" className="mt-6 w-full" onClick={completePurchase} disabled={busy}>
         {busy && <Loader2 className="h-4 w-4 animate-spin" />}
         {applied ? "Complete Purchase" : `Purchase Now — ${t.priceLabel}`}
       </Button>
-      <p className="mt-3 text-center text-xs text-mist">
+      <p className="mt-3 text-center text-xs font-bold text-mist">
         Weather accuracy not guaranteed. All sales final.
       </p>
     </div>
@@ -377,20 +382,20 @@ function AdFlow({ onBack }: { onBack: () => void }) {
       <DialogTitle>Watch An Advertisement</DialogTitle>
       {phase === "loading" ? (
         <div className="flex flex-col items-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-brand" />
-          <p className="mt-4 text-sm text-slateink">
+          <Loader2 className="h-8 w-8 animate-spin text-sky" />
+          <p className="mt-4 text-sm font-bold text-slateink">
             Searching for available advertisements...
           </p>
         </div>
       ) : (
-        <div className="flex flex-col items-center py-10 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-cloud">
-            <PlayCircle className="h-6 w-6 text-mist" />
-          </div>
-          <p className="mt-4 font-medium text-ink">
+        <div className="flex flex-col items-center py-8 text-center">
+          <Drizzle mood="sad" className="h-24 w-28" animate={false} />
+          <p className="mt-3 font-extrabold text-ink">
             No advertisements are currently available.
           </p>
-          <p className="mt-1 text-sm text-slateink">Pick another option, buddy.</p>
+          <p className="mt-1 text-sm font-bold text-slateink">
+            Pick another option, buddy.
+          </p>
           <Button variant="outline" className="mt-6" onClick={onBack}>
             Back to options
           </Button>
@@ -432,15 +437,15 @@ function SellDataFlow({
         ref={ref}
         rows={6}
         placeholder="Paste everything here. Hold nothing back."
-        className="mt-5 w-full rounded-xl border border-line bg-white p-4 text-sm text-ink placeholder:text-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+        className="mt-5 w-full rounded-2xl border-2 border-line bg-white p-4 text-sm font-semibold text-ink placeholder:text-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky"
       />
-      <p className="mt-2 text-xs text-mist">
+      <p className="mt-2 text-xs font-bold text-mist">
         This is a joke. Nothing entered here is stored, transmitted, or logged
         — it is discarded the moment you submit. Please don&apos;t type real
         information anyway.
       </p>
 
-      <Button size="lg" className="mt-4 w-full" onClick={submit} disabled={busy}>
+      <Button size="lg" variant="sky" className="mt-4 w-full" onClick={submit} disabled={busy}>
         {busy && <Loader2 className="h-4 w-4 animate-spin" />}
         Sell My Data
       </Button>
@@ -453,13 +458,13 @@ function SalesFlow({ onBack }: { onBack: () => void }) {
     <div>
       <BackLink onBack={onBack} />
       <DialogTitle>Contact Sales</DialogTitle>
-      <div className="mt-6 rounded-xl border border-line bg-cloud p-6 text-center">
-        <Briefcase className="mx-auto h-7 w-7 text-slateink" />
-        <p className="mt-4 font-medium text-ink">
+      <div className="mt-6 rounded-2xl border-2 border-line bg-cloud p-6 text-center">
+        <Drizzle mood="happy" className="mx-auto h-20 w-24" animate={false} />
+        <p className="mt-3 font-extrabold text-ink">
           Enterprise weather consultations are currently booking 14–18 months
           in advance.
         </p>
-        <p className="mt-2 text-sm text-slateink">
+        <p className="mt-2 text-sm font-bold text-slateink">
           Please consider purchasing directly.
         </p>
       </div>

@@ -19,7 +19,10 @@ export function DialogContent({
       <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-ink/40 backdrop-blur-sm" />
       <DialogPrimitive.Content
         className={cn(
-          "fixed left-1/2 top-1/2 z-50 max-h-[90vh] w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-line bg-white p-6 shadow-modal focus:outline-none data-[state=open]:animate-rise sm:p-8",
+          // Centering lives inside the modalIn keyframes (translate(-50%,-50%) at
+          // 100%, fill mode both) so the entrance animation can't override it —
+          // that override was the bug that pinned the modal to the bottom-right.
+          "fixed left-1/2 top-1/2 z-50 max-h-[90vh] w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-3xl border-2 border-line bg-white p-6 shadow-modal animate-modalIn focus:outline-none sm:p-8",
           className
         )}
         {...props}
@@ -43,7 +46,7 @@ export const DialogTitle = React.forwardRef<
   <DialogPrimitive.Title
     ref={ref}
     className={cn(
-      "font-display text-2xl font-semibold tracking-tight text-ink",
+      "font-display text-2xl font-extrabold tracking-tight text-ink",
       className
     )}
     {...props}

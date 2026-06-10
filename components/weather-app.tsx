@@ -2,38 +2,27 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-  ArrowRight,
-  CloudSun,
-  Loader2,
-  Lock,
-  MapPin,
-  ShieldCheck,
-  Sparkles,
-} from "lucide-react";
+import { ArrowRight, Loader2, Lock, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Metric } from "@/components/locked-metric";
 import { PaywallModal } from "@/components/paywall-modal";
 import { WeatherIcon } from "@/components/weather-icon";
+import { Drizzle, SpeechBubble } from "@/components/drizzle";
 import { TIERS, type Tier, type WeatherPayload } from "@/lib/tiers";
 import { cn } from "@/lib/utils";
 
-const S1 = "ewc_tier1";
-const S2 = "ewc_tier2";
+const S1 = "trwa_tier1";
+const S2 = "trwa_tier2";
 
-// Decoy values shown (blurred) behind the paywall. Never the real data.
-const DECOY = {
-  feelsLike: 74,
-  humidity: 48,
-  wind: 7,
-  uv: 6,
-  visibility: 10,
-  sunrise: "5:43 AM",
-  sunset: "8:11 PM",
-  pop: 20,
-};
+const DRIZZLE_LINES = [
+  "Humidity is my favorite secret! Wanna buy it?",
+  "I'd tell you the wind speed, but my lawyer said no.",
+  "Future weather is expensive to manufacture. I should know — I make it.",
+  "Fun fact: the UV index exists. That info was free. The number isn't.",
+  "Premium humidity insights available. I'm so excited for you.",
+];
 
 export function WeatherApp() {
   const router = useRouter();
@@ -43,6 +32,7 @@ export function WeatherApp() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [weather, setWeather] = useState<WeatherPayload | null>(null);
+  const [line, setLine] = useState(0);
 
   const [tier1, setTier1] = useState(false);
   const [tier2, setTier2] = useState(false);
@@ -50,7 +40,6 @@ export function WeatherApp() {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalTier, setModalTier] = useState<Tier>(1);
 
-  // Restore session unlocks
   useEffect(() => {
     setTier1(sessionStorage.getItem(S1) === "1");
     setTier2(sessionStorage.getItem(S2) === "1");
@@ -66,32 +55,30 @@ export function WeatherApp() {
     }
   }, []);
 
-  const search = useCallback(
-    async (q: string) => {
-      const trimmed = q.trim();
-      if (!trimmed) return;
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await fetch(`/api/weather?q=${encodeURIComponent(trimmed)}`);
-        const data = await res.json();
-        if (!res.ok) {
-          setError(data.error || "Unable to retrieve enterprise weather assets.");
-          setWeather(null);
-        } else {
-          setWeather(data);
-        }
-      } catch {
-        setError(
-          "Unable to retrieve enterprise weather assets. Please try again later."
-        );
+  const search = useCallback(async (q: string) => {
+    const trimmed = q.trim();
+    if (!trimmed) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/weather?q=${encodeURIComponent(trimmed)}`);
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Unable to retrieve totally real weather assets.");
         setWeather(null);
-      } finally {
-        setLoading(false);
+      } else {
+        setWeather(data);
+        setLine(Math.floor(Math.random() * DRIZZLE_LINES.length));
       }
-    },
-    []
-  );
+    } catch {
+      setError(
+        "Unable to retrieve totally real weather assets. Please try again later."
+      );
+      setWeather(null);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   // Handle return from Stripe Checkout
   useEffect(() => {
@@ -120,20 +107,19 @@ export function WeatherApp() {
     setModalOpen(true);
   }
 
+  const unlockedCount = (tier1 ? 5 : 0) + (tier2 ? 6 : 0);
+
   return (
     <div className="mx-auto max-w-5xl px-5 pb-24">
       {/* Nav */}
       <header className="flex items-center justify-between py-6">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-ink text-white">
-            <CloudSun className="h-5 w-5" />
-          </div>
-          <span className="font-display text-[15px] font-semibold tracking-tight">
-            Enterprise Weather Company™
+          <Drizzle mood="happy" className="h-12 w-14" animate={false} />
+          <span className="font-display text-lg font-extrabold tracking-tight">
+            Totally Real Weather App™
           </span>
         </div>
-        <div className="hidden items-center gap-2 text-xs font-medium text-mist sm:flex">
-          <ShieldCheck className="h-4 w-4" />
+        <div className="hidden items-center gap-2 text-xs font-bold text-mist sm:flex">
           Trusted by over 3 Fortune 500 companies
         </div>
       </header>
@@ -142,31 +128,23 @@ export function WeatherApp() {
       <section
         className={cn(
           "mx-auto max-w-2xl text-center transition-all",
-          weather ? "pt-6 pb-10" : "pt-20 pb-16 sm:pt-28"
+          weather ? "pt-4 pb-8" : "pt-16 pb-14 sm:pt-24"
         )}
       >
         {!weather && (
-          <div className="mb-5 inline-flex items-center gap-1.5 rounded-full border border-line bg-white/70 px-3.5 py-1.5 text-xs font-medium text-slateink backdrop-blur">
-            <Sparkles className="h-3.5 w-3.5 text-brand" />
-            Weather intelligence at scale
-          </div>
-        )}
-        <h1
-          className={cn(
-            "font-display font-semibold tracking-tight text-ink",
-            weather ? "text-2xl" : "text-4xl leading-[1.1] sm:text-5xl"
-          )}
-        >
-          {weather
-            ? "Your enterprise weather assets"
-            : "Enterprise-grade weather solutions for modern organizations."}
-        </h1>
-        {!weather && (
-          <p className="mx-auto mt-4 max-w-md text-base leading-relaxed text-slateink">
-            Real-time atmospheric analytics, delivered through a
-            procurement-friendly access model. Future weather is expensive to
-            manufacture.
-          </p>
+          <>
+            <Drizzle mood="happy" className="mx-auto h-28 w-32" />
+            <h1 className="mt-4 font-display text-4xl font-extrabold leading-[1.1] tracking-tight text-ink sm:text-5xl">
+              Real weather.
+              <br />
+              <span className="text-sky">Really expensive.</span>
+            </h1>
+            <p className="mx-auto mt-4 max-w-md text-base font-semibold leading-relaxed text-slateink">
+              Totally real weather data for totally real people. Meet Drizzle,
+              our Chief Revenue Cloud. He knows the humidity. He&apos;s not
+              telling. Yet.
+            </p>
+          </>
         )}
 
         <form
@@ -181,28 +159,28 @@ export function WeatherApp() {
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Enter ZIP code or City, State"
-              className="pl-10"
+              placeholder="ZIP code or City, State"
+              className="rounded-2xl border-2 pl-10 font-bold"
               aria-label="Enter ZIP code or City, State"
             />
           </div>
-          <Button size="lg" type="submit" disabled={loading}>
+          <Button size="md" variant="sky" type="submit" disabled={loading} className="h-12">
             {loading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <>
-                Retrieve Weather™ <ArrowRight className="h-4 w-4" />
+                Get Weather™ <ArrowRight className="h-4 w-4" />
               </>
             )}
           </Button>
         </form>
         {error && (
-          <p className="mx-auto mt-4 max-w-md rounded-xl border border-red-100 bg-red-50 p-3 text-sm text-red-700">
+          <p className="mx-auto mt-4 max-w-md rounded-2xl border-2 border-tile-pink bg-tile-pink p-3 text-sm font-bold text-tile-pinkText">
             {error}
           </p>
         )}
         {!weather && !error && (
-          <p className="mt-4 text-xs text-mist">
+          <p className="mt-4 text-xs font-bold text-mist">
             Try 10001 · Austin, TX · Philadelphia, PA
           </p>
         )}
@@ -212,7 +190,7 @@ export function WeatherApp() {
       {weather && (
         <div className="space-y-6">
           {weather.demo && (
-            <p className="rounded-xl border border-line bg-white/70 px-4 py-2.5 text-center text-xs text-mist">
+            <p className="rounded-2xl border-2 border-line bg-white px-4 py-2.5 text-center text-xs font-bold text-mist">
               Demo data shown — no weather API key is configured on this
               deployment.
             </p>
@@ -222,34 +200,45 @@ export function WeatherApp() {
           <Card className="animate-rise p-7 sm:p-9">
             <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
               <div>
-                <div className="flex items-center gap-1.5 text-sm font-medium text-slateink">
+                <div className="flex items-center gap-1.5 text-sm font-bold text-slateink">
                   <MapPin className="h-4 w-4" /> {weather.location}
                 </div>
-                <div className="tabular mt-2 font-display text-7xl font-semibold tracking-tight text-ink sm:text-8xl">
+                <div className="tabular mt-2 font-display text-7xl font-extrabold tracking-tight text-ink sm:text-8xl">
                   {weather.temp}°
-                  <span className="text-3xl font-medium text-mist sm:text-4xl">
-                    F
-                  </span>
+                  <span className="text-3xl font-bold text-mist sm:text-4xl">F</span>
                 </div>
-                <div className="mt-1 text-lg text-slateink">
+                <div className="mt-1 text-lg font-bold text-slateink">
                   {weather.conditions}
                 </div>
               </div>
               <WeatherIcon
                 code={weather.icon}
-                className="h-24 w-24 text-brand sm:h-28 sm:w-28"
+                className="h-24 w-24 text-sky sm:h-28 sm:w-28"
               />
             </div>
 
-            <div className="mt-8 border-t border-line pt-6">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-ink">
-                  Atmospheric details
+            {/* Drizzle commentary */}
+            <div className="mt-6 flex items-center gap-2">
+              <Drizzle mood={tier1 ? "happy" : "guard"} className="h-16 w-20 shrink-0" />
+              <SpeechBubble className="flex-1">
+                {tier1
+                  ? "Look at you, a premium weather knower. I'm so proud."
+                  : DRIZZLE_LINES[line]}
+              </SpeechBubble>
+            </div>
+
+            <div className="mt-6 border-t-2 border-line pt-6">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                <h2 className="text-sm font-extrabold text-ink">
+                  Weather insights{" "}
+                  <span className="font-bold text-mist">
+                    · {unlockedCount} of 11 unlocked
+                  </span>
                 </h2>
                 {!tier1 && (
                   <button
                     onClick={() => openPaywall(1)}
-                    className="inline-flex items-center gap-1.5 text-xs font-medium text-brand hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-md"
+                    className="inline-flex items-center gap-1.5 rounded-md text-xs font-extrabold text-sky hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky"
                   >
                     <Lock className="h-3 w-3" /> Weather Premium™ ·{" "}
                     {TIERS[1].priceLabel}
@@ -259,40 +248,40 @@ export function WeatherApp() {
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
                 <Metric
                   label="Feels Like"
-                  value={tier1 ? `${weather.feelsLike}°` : `${DECOY.feelsLike}°`}
+                  value={`${weather.feelsLike}°`}
+                  color="mint"
                   locked={!tier1}
-                  lockedHint="Premium humidity insights available."
                   onUnlock={() => openPaywall(1)}
                 />
                 <Metric
                   label="Humidity"
-                  value={tier1 ? weather.humidity : DECOY.humidity}
+                  value={weather.humidity}
                   unit="%"
+                  color="blue"
                   locked={!tier1}
-                  lockedHint="Premium humidity insights available."
                   onUnlock={() => openPaywall(1)}
                 />
                 <Metric
                   label="Wind Speed"
-                  value={tier1 ? weather.windSpeed : DECOY.wind}
+                  value={weather.windSpeed}
                   unit="mph"
+                  color="purple"
                   locked={!tier1}
-                  lockedHint="Wind speed requires a Weather Premium™ subscription."
                   onUnlock={() => openPaywall(1)}
                 />
                 <Metric
                   label="UV Index"
-                  value={tier1 ? weather.uvIndex : DECOY.uv}
+                  value={weather.uvIndex}
+                  color="amber"
                   locked={!tier1}
-                  lockedHint="Unlock enhanced meteorological visibility."
                   onUnlock={() => openPaywall(1)}
                 />
                 <Metric
                   label="Visibility"
-                  value={tier1 ? weather.visibility : DECOY.visibility}
+                  value={weather.visibility}
                   unit="mi"
+                  color="pink"
                   locked={!tier1}
-                  lockedHint="Unlock enhanced meteorological visibility."
                   onUnlock={() => openPaywall(1)}
                 />
               </div>
@@ -303,97 +292,109 @@ export function WeatherApp() {
           <Card className="animate-rise p-7 sm:p-9 [animation-delay:120ms]">
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
               <div>
-                <h2 className="font-display text-xl font-semibold tracking-tight text-ink">
-                  Forecast
+                <h2 className="font-display text-xl font-extrabold tracking-tight text-ink">
+                  The Future™
                 </h2>
-                <p className="mt-0.5 text-sm text-slateink">
+                <p className="mt-0.5 text-sm font-bold text-slateink">
                   Future weather is expensive to manufacture.
                 </p>
               </div>
               {!tier2 && (
                 <Button size="sm" onClick={() => openPaywall(2)}>
                   <Lock className="h-3.5 w-3.5" />
-                  Enterprise Forecast Suite™ · {TIERS[2].priceLabel}
+                  Unlock · {TIERS[2].priceLabel}
                 </Button>
               )}
             </div>
 
-            <LockedSection locked={!tier2} onUnlock={() => openPaywall(2)}>
-              {/* Hourly */}
-              <div className="flex gap-2 overflow-x-auto pb-2">
-                {(tier2 ? weather.hourly : decoyHourly()).map((h, i) => (
-                  <div
-                    key={i}
-                    className="flex min-w-[72px] flex-col items-center rounded-xl border border-line bg-white/70 px-3 py-3.5"
-                  >
-                    <span className="text-[11px] font-medium text-mist">
-                      {h.time}
-                    </span>
-                    <WeatherIcon
-                      code={h.icon}
-                      className="my-2 h-6 w-6 text-brand"
-                    />
-                    <span className="tabular font-mono text-sm font-medium text-ink">
-                      {h.temp}°
-                    </span>
-                  </div>
-                ))}
-              </div>
+            {tier2 ? (
+              <>
+                {/* Hourly */}
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                  {weather.hourly.map((h, i) => (
+                    <div
+                      key={i}
+                      className="flex min-w-[72px] flex-col items-center rounded-2xl border-2 border-line bg-white px-3 py-3.5"
+                    >
+                      <span className="text-[11px] font-extrabold text-mist">
+                        {h.time}
+                      </span>
+                      <WeatherIcon code={h.icon} className="my-2 h-6 w-6 text-sky" />
+                      <span className="tabular text-sm font-extrabold text-ink">
+                        {h.temp}°
+                      </span>
+                    </div>
+                  ))}
+                </div>
 
-              {/* Daily */}
-              <div className="mt-5 divide-y divide-line rounded-xl border border-line bg-white/70">
-                {(tier2 ? weather.daily : decoyDaily()).map((d, i) => (
-                  <div
-                    key={i}
-                    className="grid grid-cols-[3.5rem_1.5rem_1fr_auto] items-center gap-4 px-4 py-3"
-                  >
-                    <span className="text-sm font-medium text-ink">{d.day}</span>
-                    <WeatherIcon code={d.icon} className="h-5 w-5 text-brand" />
-                    <span className="text-xs text-slateink">
-                      {d.pop > 30 ? `${d.pop}% chance of rain` : "Low rain probability"}
-                    </span>
-                    <span className="tabular font-mono text-sm">
-                      <span className="font-medium text-ink">{d.hi}°</span>
-                      <span className="ml-2 text-mist">{d.lo}°</span>
-                    </span>
-                  </div>
-                ))}
-              </div>
+                {/* Daily */}
+                <div className="mt-5 divide-y-2 divide-line rounded-2xl border-2 border-line bg-white">
+                  {weather.daily.map((d, i) => (
+                    <div
+                      key={i}
+                      className="grid grid-cols-[3.5rem_1.5rem_1fr_auto] items-center gap-4 px-4 py-3"
+                    >
+                      <span className="text-sm font-extrabold text-ink">{d.day}</span>
+                      <WeatherIcon code={d.icon} className="h-5 w-5 text-sky" />
+                      <span className="text-xs font-bold text-slateink">
+                        {d.pop > 30
+                          ? `${d.pop}% chance of rain`
+                          : "Low rain probability"}
+                      </span>
+                      <span className="tabular text-sm font-extrabold">
+                        <span className="text-ink">{d.hi}°</span>
+                        <span className="ml-2 text-mist">{d.lo}°</span>
+                      </span>
+                    </div>
+                  ))}
+                </div>
 
-              {/* Sun + rain */}
-              <div className="mt-5 grid grid-cols-3 gap-3">
-                <Metric
-                  label="Sunrise"
-                  value={tier2 ? weather.sunrise : DECOY.sunrise}
-                  locked={false}
-                />
-                <Metric
-                  label="Sunset"
-                  value={tier2 ? weather.sunset : DECOY.sunset}
-                  locked={false}
-                />
-                <Metric
-                  label="Rain Probability"
-                  value={tier2 ? weather.rainProbability : DECOY.pop}
-                  unit="%"
-                  locked={false}
-                />
-              </div>
-            </LockedSection>
+                <div className="mt-5 grid grid-cols-3 gap-3">
+                  <Metric label="Sunrise" value={weather.sunrise} color="amber" locked={false} />
+                  <Metric label="Sunset" value={weather.sunset} color="coral" locked={false} />
+                  <Metric
+                    label="Rain Probability"
+                    value={weather.rainProbability}
+                    unit="%"
+                    color="blue"
+                    locked={false}
+                  />
+                </div>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => openPaywall(2)}
+                className="flex w-full flex-col items-center rounded-2xl border-2 border-dashed border-line bg-cloud px-6 py-10 text-center transition-colors hover:border-sky focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky"
+              >
+                <Drizzle mood="guard" className="h-24 w-28" />
+                <p className="mt-4 font-display text-lg font-extrabold text-ink">
+                  Drizzle is standing on the forecast.
+                </p>
+                <p className="mt-1 max-w-sm text-sm font-bold text-slateink">
+                  Tomorrow&apos;s weather, the 7-day outlook, sunrise, sunset,
+                  and rain probability are part of the Enterprise Forecast
+                  Suite™. He will move for {TIERS[2].priceLabel}.
+                </p>
+                <span className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-leaf px-5 py-3 text-sm font-extrabold uppercase tracking-wide text-white border-b-4 border-leaf-edge">
+                  <Lock className="h-4 w-4" /> Unlock The Future™
+                </span>
+              </button>
+            )}
           </Card>
 
-          {/* Corporate nonsense strip */}
+          {/* Nonsense strip */}
           <div className="grid gap-3 sm:grid-cols-3">
             {[
               "Enterprise-grade atmospheric analytics.",
               "Unlock enhanced meteorological visibility.",
               "Premium humidity insights available.",
-            ].map((line) => (
+            ].map((l) => (
               <div
-                key={line}
-                className="rounded-xl border border-line bg-white/60 px-4 py-3 text-center text-xs font-medium text-slateink backdrop-blur"
+                key={l}
+                className="rounded-2xl border-2 border-line bg-white px-4 py-3 text-center text-xs font-bold text-slateink"
               >
-                {line}
+                {l}
               </div>
             ))}
           </div>
@@ -401,10 +402,11 @@ export function WeatherApp() {
       )}
 
       {/* Footer */}
-      <footer className="mt-24 border-t border-line pt-8 text-center text-xs text-mist">
-        <p className="font-medium text-slateink">Enterprise Weather Company™</p>
+      <footer className="mt-24 border-t-2 border-line pt-8 text-center text-xs font-bold text-mist">
+        <p className="text-slateink">Totally Real Weather App™</p>
         <p className="mt-1.5">Trusted by over 3 Fortune 500 companies.</p>
         <p className="mt-1.5">Weather data may be weather.</p>
+        <p className="mt-1.5">Drizzle is not a meteorologist.</p>
       </footer>
 
       <PaywallModal
@@ -416,55 +418,4 @@ export function WeatherApp() {
       />
     </div>
   );
-}
-
-function LockedSection({
-  locked,
-  onUnlock,
-  children,
-}: {
-  locked: boolean;
-  onUnlock: () => void;
-  children: React.ReactNode;
-}) {
-  if (!locked) return <>{children}</>;
-  return (
-    <div className="relative">
-      <div className="redacted" aria-hidden="true">
-        {children}
-      </div>
-      <button
-        type="button"
-        onClick={onUnlock}
-        className="absolute inset-0 flex items-center justify-center rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-        aria-label="Unlock forecast with Enterprise Forecast Suite"
-      >
-        <span className="inline-flex items-center gap-2 rounded-full border border-line bg-white/90 px-5 py-2.5 text-sm font-medium text-ink shadow-card backdrop-blur">
-          <Lock className="h-4 w-4 text-brand" />
-          Future forecasting is part of our Enterprise Forecast Suite™
-        </span>
-      </button>
-    </div>
-  );
-}
-
-function decoyHourly() {
-  const hours = ["Now", "1 PM", "2 PM", "3 PM", "4 PM", "5 PM", "6 PM", "7 PM"];
-  return hours.map((time, i) => ({
-    time,
-    temp: 71 + ((i * 3) % 5),
-    icon: i % 3 === 2 ? "02d" : "01d",
-    pop: 0,
-  }));
-}
-
-function decoyDaily() {
-  const days = ["Today", "Thu", "Fri", "Sat", "Sun", "Mon", "Tue"];
-  return days.map((day, i) => ({
-    day,
-    hi: 75 - (i % 4),
-    lo: 60 - (i % 3),
-    icon: i % 3 === 1 ? "10d" : "01d",
-    pop: i % 3 === 1 ? 60 : 10,
-  }));
 }
